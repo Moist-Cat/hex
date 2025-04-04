@@ -255,15 +255,25 @@ class TestHeuristic(unittest.TestCase):
         h = distance_heuristic(board, 1)
         assert h == 2  # Needs (1,1) and either (0,1) or (1,0)
 
-def test_island_distances():
-    board = HexBoard(5)
-    # Player 2 has two islands separated by 2 empty spaces
-    board.place_piece(0, 0, 2)
-    board.place_piece(0, 1, 2)
-    board.place_piece(4, 3, 2)
-    board.place_piece(4, 4, 2)
+    def test_island_distances(self):
+        board = HexBoard(5)
+        # Player 2 has two islands separated by 2 empty spaces
+        board.place_piece(0, 0, 2)
+        board.place_piece(0, 1, 2)
+        board.place_piece(4, 3, 2)
+        board.place_piece(4, 4, 2)
 
-    h = distance_heuristic(board, 2)
-    h_2 = average_distance_heuristic(board, 2)
-    assert h == 4
-    assert h_2 == 2
+        h = distance_heuristic(board, 2)
+        h_2 = average_distance_heuristic(board, 2)
+        assert h == 3
+        assert h_2 == 3, h_2 # two islands
+
+
+def test_phantom_edge_connection():
+    board = HexBoard(3)
+    # Player 1 has piece touching left edge
+    board.place_piece(1, 0, 1)
+    
+    h = distance_heuristic(board, 1)
+    assert h == 2, h  # Needs to connect to right edge
+test_phantom_edge_connection()

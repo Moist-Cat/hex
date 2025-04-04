@@ -313,20 +313,17 @@ def _distance_heuristic(board, player_id):
     if player_id == 1:  # connect to left edges
         for r in range(size):
             left, right = (r, 0), (r, size - 1)
-            if left not in opponent_pieces:
+            if left not in opponent_pieces and left not in own_pieces:
                 queue.append(left)
                 seen.add(left)
                 parent[left] = None
                 distance[left] = 0 if left in own_pieces else 1
-
-            # compress
-            if left in own_pieces and False:
-                continue
+            elif left in own_pieces: # compress
                 all_coords = exhaust_coords(own_pieces, left, size, seen)
                 for crd in all_coords:
                     parent[crd] = None
                     distance[crd] = 0
-                    queue.append(crd)
+                    queue.appendleft(crd)
 
             # connect other phantom
             if right not in opponent_pieces:
@@ -336,19 +333,18 @@ def _distance_heuristic(board, player_id):
     else:  # connect to top edge
         for c in range(size):
             top, bottom = (0, c), (size - 1, c)
-            if top not in opponent_pieces:
+            if top not in opponent_pieces and top not in own_pieces:
                 queue.append(top)
                 seen.add(top)
 
                 parent[top] = None
                 distance[top] = 0 if top in own_pieces else 1
-
-            if top in own_pieces and False:
+            elif top in own_pieces:
                 all_coords = exhaust_coords(own_pieces, top, size, seen)
                 for crd in all_coords:
                     parent[crd] = None
                     distance[crd] = 0
-                    queue.append(crd)
+                    queue.appendleft(crd)
 
             if bottom not in opponent_pieces:
                 terminal.add(bottom)
@@ -376,7 +372,9 @@ def _distance_heuristic(board, player_id):
                 for crd in all_coords:
                     parent[crd] = (r, c)
                     distance[crd] = distance[(r, c)] # zero cost
-                    queue.append(crd)
+                    # appendleft because these are at distance[(r, c)], we can
+                    # not put them next to the nodes at distance + 1
+                    queue.appendleft(crd)
             elif coords in opponent_pieces:
                 # can not pass
                 continue
@@ -387,20 +385,20 @@ def _distance_heuristic(board, player_id):
                 seen.add(coords)
 
     return parent, distance, end_phantom
-    #breakpoint()
+
+def find_average_distance(parent, end_phantom, own_pieces):
+    """
+    Find average distance between connected components formed by
+    our pieces in the shortest path... in other words, average of the
+    white spaces in the shortest path
+    """
     # idea: if the current node is ours, reset counter and add the current
     # distance to an array
     # find the average of the array once finished
-    avg_distance = find_average_distance(parent, end_phantom, own_pieces)
-
-    return distance[end_phantom] + avg_distance
-
-def find_average_distance(parent, end_phantom, own_pieces):
     node = end_phantom
     counter = 0
     distances = []
     while parent.get(node):
-        #breakpoint()
         if counter and parent[node] in own_pieces:
             distances.append(counter)
             counter = 0
