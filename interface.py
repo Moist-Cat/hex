@@ -1,12 +1,14 @@
 import time
-from gemu import HexBoard, MinimaxPlayer as Candidate
+from gemu import HexBoard, MinimaxPlayer as Candidate, Monke as Other
 
 class HexGameCLI:
     def __init__(self):
-        self.board_size = 4
+        self.board_size = 11
         self.human_player = 1
         self.ai_player = 2
         self.ai = Candidate
+        self.ai_2 = Other
+        self.vs_ai = True
         self.ai_metrics = {
             'move_times': [],
             'avg_move_time': 0,
@@ -63,6 +65,8 @@ class HexGameCLI:
     def play_game(self):
         board = HexBoard(size=self.board_size)
         ai = self.ai(player_id=self.ai_player)
+        if self.vs_ai:
+            ai_2 = self.ai_2(player_id=self.human_player)
         current_player = 1  # Human starts first
         
         while True:
@@ -73,7 +77,10 @@ class HexGameCLI:
             
             if current_player == self.human_player:
                 # Human turn
-                row, col = self.get_human_move()
+                if not self.vs_ai:
+                    row, col = self.get_human_move()
+                else:
+                    row, col = ai_2.play(board)
                 if not board.place_piece(row, col, self.human_player):
                     print("Invalid move! Try again.")
                     time.sleep(1)
@@ -98,6 +105,7 @@ class HexGameCLI:
                 if winner == "AI":
                     self.ai_metrics['wins'] += 1
                 self.ai_metrics['games_played'] += 1
+                #input("Press any key to continue...")
                 return
             
             current_player = 3 - current_player  # Switch player (1 ↔ 2)
@@ -108,7 +116,8 @@ class HexGameCLI:
         print(f"1. Board Size (Current: {self.board_size})")
         print(f"2. Player Side (Current: {'Player 1 (X)' if self.human_player == 1 else 'Player 2 (O)'})")
         print("3. Start Game")
-        print("4. Exit")
+        print(f"4. Toggle VS AI (Current: {self.vs_ai})")
+        print("5. Exit")
         
         choice = input("Select: ").strip()
         if choice == "1":
@@ -119,6 +128,8 @@ class HexGameCLI:
         elif choice == "3":
             self.play_game()
         elif choice == "4":
+            self.vs_ai ^= self.vs_ai
+        elif choice == "5":
             exit()
         else:
             print("Invalid choice!")

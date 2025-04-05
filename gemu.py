@@ -12,6 +12,10 @@ from dsa import (
     minimax,
     nun,
     manhattan,
+    full_distance_heuristic,
+    distance_heuristic,
+    average_distance_heuristic,
+    adversarial_heuristic,
 )
 
 # abstract
@@ -188,7 +192,17 @@ class AstarPlayer(Player):
 
 
 class MinimaxPlayer(Player):
-    def __init__(self, player_id: int, depth=3, heuristic=manhattan):
+    def __init__(
+        self,
+        player_id: int,
+        depth=2,
+        #heuristic=average_distance_heuristic,
+        #heuristic=distance_heuristic,
+        heuristic=full_distance_heuristic,
+        #heuristic=adversarial_heuristic(
+        #    [full_distance_heuristic,]
+        #)
+    ):
         super().__init__(player_id)
         self.depth = depth
         self.heuristic = heuristic
@@ -202,6 +216,7 @@ class MinimaxPlayer(Player):
             beta=float("inf"),
             maximising=True,
             player_id=self.player_id,
-            heuristic=manhattan,
+            heuristic=self.heuristic,
         )
+        #breakpoint()
         return move

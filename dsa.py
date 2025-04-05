@@ -316,12 +316,12 @@ def _distance_heuristic(board, player_id):
             if left not in opponent_pieces and left not in own_pieces:
                 queue.append(left)
                 seen.add(left)
-                parent[left] = None
+                parent[left] = start_phantom
                 distance[left] = 0 if left in own_pieces else 1
             elif left in own_pieces: # compress
                 all_coords = exhaust_coords(own_pieces, left, size, seen)
                 for crd in all_coords:
-                    parent[crd] = None
+                    parent[crd] = start_phantom
                     distance[crd] = 0
                     queue.appendleft(crd)
 
@@ -337,12 +337,12 @@ def _distance_heuristic(board, player_id):
                 queue.append(top)
                 seen.add(top)
 
-                parent[top] = None
+                parent[top] = start_phantom
                 distance[top] = 0 if top in own_pieces else 1
             elif top in own_pieces:
                 all_coords = exhaust_coords(own_pieces, top, size, seen)
                 for crd in all_coords:
-                    parent[crd] = None
+                    parent[crd] = start_phantom
                     distance[crd] = 0
                     queue.appendleft(crd)
 
@@ -405,41 +405,66 @@ def find_average_distance(parent, end_phantom, own_pieces):
         elif parent[node] not in own_pieces:
             counter += 1
         node = parent[node]
-
     if not distances:
-        return 0
+        return counter
     return sum(distances)/len(distances)
+
+def near_count(parent, end_phantom, own_pieces):
+    """
+    Gain advantage when having pieces close to each other
+    """
+    node = end_phantom
+    counter = 0
+    distances = []
+    while parent.get(node):
+        if counter and parent[node] in own_pieces:
+            distances.append(counter)
+            counter = 0
+        elif parent[node] not in own_pieces:
+            counter += 1
+        node = parent[node]
+    if not distances:
+        return -counter
+    c = Counter(distances)
+    return 0.5*c[1] + 0.2*c[2]
+
 
 # distance h function
 def distance_heuristic(board, player_id):
     parent, distance, end_node = _distance_heuristic(board, player_id)
 
-    return distance[end_node]
+    #return -distance[end_node]
+    return 2*(board.size - distance[end_node]) # placed pieces to make the path shorter
 
 def average_distance_heuristic(board, player_id):
     parent, distance, end_node = _distance_heuristic(board, player_id)
     own_pieces = board.player_positions[player_id]
 
-    return find_average_distance(parent, end_node, own_pieces)
+    #return -find_average_distance(parent, end_node, own_pieces)
+    return near_count(parent, end_node, own_pieces)
 
 def full_distance_heuristic(board, player_id):
     parent, distance, end_node = _distance_heuristic(board, player_id)
     own_pieces = board.player_positions[player_id]
 
-    return distance[end_node] + find_average_distance(parent, end_node, own_pieces)
+    #return -distance[end_node]*0.5 + -find_average_distance(parent, end_node, own_pieces)
+    return 2*(board.size - distance[end_node]) + near_count(parent, end_node, own_pieces)
 
 
-def adversarial_heuristic(board, player_id, advantages: 'List[Callable]'):
+def adversarial_heuristic(advantages: 'List[Callable]'):
     """
     Idea: an advantage for me it's a disadventage for the other player and
      vice-versa.
     """
-    total = 0
-    for adv in advantages:
-        total += adv(board, player_id)
-        total -= adv(board, opponent(player_id))
+    def _adv(board, player_id):
+        total = 0
+        for adv in advantages:
+            total += adv(board, player_id)
+            total -= adv(board, opponent(player_id))
 
-    return total
+        return total
+
+    return _adv
 
 
 def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
@@ -460,7 +485,7 @@ def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
     for move in valid_moves:
         new_board = board.clone()
         x, y = move
-        new_board.place_piece(x, y, player_id)
+        new_board.place_piece(x, y, player_id if maximising else opponent(player_id))
 
         val, _ = minimax(
             new_board,
@@ -468,7 +493,8 @@ def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
             alpha,
             beta,
             not maximising,
-            opponent(player_id),
+            #opponent(player_id),
+            player_id,
             heuristic,
         )
 

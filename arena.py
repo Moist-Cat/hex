@@ -2,7 +2,7 @@ import time
 import statistics
 import random
 from gemu import HexBoard, AstarPlayer, Monke, Usagi, MinimaxPlayer as Candidate
-from dsa import manhattan
+from dsa import manhattan, full_distance_heuristic
 
 
 class Arena:
@@ -20,9 +20,11 @@ class Arena:
         if random.random() > 0.5:
             candidate = candidate_class(player_id=1, **self.candidate_kwargs)
             opponent = opponent_class(player_id=2)
+            opponent._is_candidate = False
         else:
             candidate = candidate_class(player_id=2, **self.candidate_kwargs)
             opponent = opponent_class(player_id=1)
+            opponent._is_candidate = False
 
         move_times = []
         winner = None
@@ -32,8 +34,7 @@ class Arena:
         while True:
             # time only candidate's moves
             if (
-                hasattr(current_player, "_is_candidate")
-                and current_player._is_candidate
+                current_player._is_candidate
             ):
                 start_time = time.perf_counter()
                 move = current_player.play(board)
@@ -50,17 +51,17 @@ class Arena:
 
             # Check win condition
             if board.check_connection(current_player.player_id):
-                winner = current_player.player_id
+                winner = current_player
                 break
 
             # Switch players
             current_player = (
-                opponent if isinstance(current_player, candidate_class) else candidate
+                opponent if not current_player._is_candidate else candidate
             )
             move_count += 1
 
         return {
-            "winner": winner,
+            "winner": current_player,
             "first": candidate.player_id == 1,
             "move_times": move_times,
             "total_moves": move_count + 1,
@@ -79,7 +80,7 @@ class Arena:
             for game_num in range(1, self.games_per_level + 1):
                 result = self._play_game(self.candidate, Opponent)
 
-                if result["winner"] == 1:  # Candidate is player 1
+                if result["winner"]._is_candidate:
                     wins += 1
 
                 game_metrics.append(
@@ -88,7 +89,7 @@ class Arena:
                 all_move_times.extend(result["move_times"])
 
                 print(
-                    f"Game {game_num}: {'Won' if result['winner'] == 1 else 'Lost'} "
+                    f"Game {game_num}: {'Won' if result['winner']._is_candidate else 'Lost'} "
                     f"in {result['total_moves']} moves "
                     f"(Decision time: {sum(result['move_times']):.2f}s)"
                 )
@@ -140,12 +141,10 @@ class Arena:
 arena = Arena(
     candidate=Candidate,
     #levels=[Monke, Usagi, AstarPlayer, Candidate],
-    #levels=[Monke, Usagi, Candidate],
-    levels=[Monke,],
+    levels=[Monke, Usagi, Candidate],
+    #levels=[Monke,],
     board_size=11,
     games_per_level=10,
-    #depth=2,
-    #heuristic=manhattan,
 )
 
 report = arena.run()

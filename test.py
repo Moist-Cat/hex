@@ -234,7 +234,7 @@ class TestHeuristic(unittest.TestCase):
         board.place_piece(0, 2, 1)
         
         h = distance_heuristic(board, 1)
-        assert h == 0  # No pieces needed to win
+        assert abs(h) == 0  # No pieces needed to win
 
     def test_completely_blocked(self):
         board = HexBoard(3)
@@ -244,7 +244,7 @@ class TestHeuristic(unittest.TestCase):
         board.place_piece(2, 1, 2)
         
         h = distance_heuristic(board, 1)
-        assert h == float('inf')  # Impossible to win
+        assert abs(h) == float('inf')  # Impossible to win
 
     def test_minimum_path_pieces(self):
         board = HexBoard(3)
@@ -253,7 +253,7 @@ class TestHeuristic(unittest.TestCase):
         board.place_piece(2, 2, 1)
         
         h = distance_heuristic(board, 1)
-        assert h == 2  # Needs (1,1) and either (0,1) or (1,0)
+        assert abs(h) == 2  # Needs (1,1) and either (0,1) or (1,0)
 
     def test_island_distances(self):
         board = HexBoard(5)
@@ -265,15 +265,28 @@ class TestHeuristic(unittest.TestCase):
 
         h = distance_heuristic(board, 2)
         h_2 = average_distance_heuristic(board, 2)
-        assert h == 3
-        assert h_2 == 3, h_2 # two islands
+        assert abs(h) == 3
+        assert abs(h_2) == 3, h_2 # two islands
 
 
-def test_phantom_edge_connection():
-    board = HexBoard(3)
-    # Player 1 has piece touching left edge
-    board.place_piece(1, 0, 1)
-    
-    h = distance_heuristic(board, 1)
-    assert h == 2, h  # Needs to connect to right edge
-test_phantom_edge_connection()
+    def test_phantom_edge_connection(self):
+        board = HexBoard(3)
+        # Player 1 has piece touching left edge
+        board.place_piece(1, 0, 1)
+        
+        h = distance_heuristic(board, 1)
+        assert abs(h) == 2, h  # Needs to connect to right edge
+
+    def test_opponent_blocks(self):
+        board = HexBoard(3)
+        board.place_piece(2, 0, 1)
+        board.place_piece(2, 2, 1)
+
+        h = distance_heuristic(board, 1)
+        assert abs(h) == 1  # direct in 2, 1
+
+        board.place_piece(2, 1, 2)  # blocked!
+
+        h = distance_heuristic(board, 1)
+
+        assert abs(h) == 2 # must go around
