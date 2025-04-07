@@ -20,6 +20,9 @@ from dsa import (
 
 # abstract
 class HexBoard:
+
+    __slots__ = ("size", "board", "player_positions")
+
     def __init__(self, size: int):
         self.size = size
         self.board = [[0] * size for _ in range(size)]  # 0=empty, 1=Player1, 2=Player2

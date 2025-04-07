@@ -26,7 +26,7 @@ class HexGameCLI:
         print("\n   " + " ".join(f"{i:2}" for i in range(board.size)))
         for r in range(board.size):
             # Offset odd rows for hex layout
-            row_prefix = "  " if r % 2 == 0 else ""
+            row_prefix = "  "*r
             print(f"{r:2}{row_prefix}", end="")
             
             for c in range(board.size):

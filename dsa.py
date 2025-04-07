@@ -1,7 +1,7 @@
 import heapq
 import math
 from collections import Counter, deque
-from functools import reduce
+from functools import reduce, cache
 import random
 
 
@@ -12,6 +12,19 @@ def get_neighbors(row, col): # generates invalid tiles but we don't care
     else:
         directions.extend(((-1, -1), (1, -1)))
 
+    return [(row + dr, col + dc) for dr, dc in directions]
+
+@cache
+def get_neighbors(row, col): # generates invalid tiles but we don't care
+    directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+    directions = [
+        (0, -1),   # Izquierda
+        (0, 1),    # Derecha
+        (-1, 0),   # Arriba
+        (1, 0),    # Abajo
+        (-1, 1),   # Arriba derecha
+        (1, -1)    # Abajo izquierda
+    ]
     return [(row + dr, col + dc) for dr, dc in directions]
 
 
@@ -227,6 +240,7 @@ def manhattan(board, player_id):
 
     return -total
 
+@cache
 def is_valid(coords, size):
     return (
         0 <= coords[0]
@@ -493,7 +507,6 @@ def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
             alpha,
             beta,
             not maximising,
-            #opponent(player_id),
             player_id,
             heuristic,
         )

@@ -1,8 +1,14 @@
-from gemu import HexBoard
-from dsa import minimax, distance_heuristic, average_distance_heuristic
-
+import time
 import unittest
 
+from gemu import HexBoard
+from dsa import (
+    minimax,
+    _distance_heuristic,
+    distance_heuristic,
+    average_distance_heuristic,
+    full_distance_heuristic as heuristic,
+)
 
 def place(matrix, hex_board):
     for r, column in enumerate(matrix):
