@@ -5,18 +5,8 @@ from functools import reduce, cache
 import random
 
 
-def get_neighbors(row, col): # generates invalid tiles but we don't care
-    directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-    if row % 2 == 0:
-        directions.extend(((1, 1), (-1, 1)))
-    else:
-        directions.extend(((-1, -1), (1, -1)))
-
-    return [(row + dr, col + dc) for dr, dc in directions]
-
 @cache
 def get_neighbors(row, col): # generates invalid tiles but we don't care
-    directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
     directions = [
         (0, -1),   # Izquierda
         (0, 1),    # Derecha
@@ -442,6 +432,34 @@ def near_count(parent, end_phantom, own_pieces):
     c = Counter(distances)
     return 0.5*c[1] + 0.2*c[2]
 
+def full_near_count(parent, end_phantom, own_pieces, opponent_pieces):
+    """
+    Gain advantage when:
+    - having pieces close to each other
+    - being near to the center of the board
+    - being next to an opponent's tile
+    """
+    node = end_phantom
+    counter = 0
+    distances = []
+
+    near_opponent = 0
+    while parent.get(node):
+        if counter and parent[node] in own_pieces:
+            distances.append(counter)
+            counter = 0
+            x, y = parent[node]
+            for neigh in get_neighbors(x, y):
+                near_opponent += 1
+        elif parent[node] not in own_pieces:
+            counter += 1
+        node = parent[node]
+    if not distances:
+        return -counter
+    c = Counter(distances)
+    return 0.5*c[1] + 0.2*c[2] + 0.01*near_opponent
+
+
 
 # distance h function
 def distance_heuristic(board, player_id):
@@ -460,9 +478,14 @@ def average_distance_heuristic(board, player_id):
 def full_distance_heuristic(board, player_id):
     parent, distance, end_node = _distance_heuristic(board, player_id)
     own_pieces = board.player_positions[player_id]
+    opponent_pieces = board.player_positions[opponent(player_id)]
 
     #return -distance[end_node]*0.5 + -find_average_distance(parent, end_node, own_pieces)
-    return 2*(board.size - distance[end_node]) + near_count(parent, end_node, own_pieces)
+    return (
+        2*(board.size - distance[end_node])
+        #+ near_count(parent, end_node, own_pieces)
+        + full_near_count(parent, end_node, own_pieces, opponent_pieces)
+    )
 
 
 def adversarial_heuristic(advantages: 'List[Callable]'):

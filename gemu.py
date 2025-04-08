@@ -199,12 +199,13 @@ class MinimaxPlayer(Player):
         self,
         player_id: int,
         depth=2,
+        #depth=3,
         #heuristic=average_distance_heuristic,
         #heuristic=distance_heuristic,
-        heuristic=full_distance_heuristic,
-        #heuristic=adversarial_heuristic(
-        #    [full_distance_heuristic,]
-        #)
+        #heuristic=full_distance_heuristic,
+        heuristic=adversarial_heuristic(
+            [full_distance_heuristic,]
+        )
     ):
         super().__init__(player_id)
         self.depth = depth
@@ -222,4 +223,8 @@ class MinimaxPlayer(Player):
             heuristic=self.heuristic,
         )
         #breakpoint()
+        if not move:
+            # owarida..
+            print("Giving up...")
+            return mboard.get_possible_moves()[0]
         return move

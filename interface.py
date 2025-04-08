@@ -7,7 +7,8 @@ class HexGameCLI:
         self.human_player = 1
         self.ai_player = 2
         self.ai = Candidate
-        self.ai_2 = Other
+        #self.ai_2 = Other
+        self.ai_2 = Candidate
         self.vs_ai = True
         self.ai_metrics = {
             'move_times': [],
