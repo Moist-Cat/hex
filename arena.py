@@ -2,7 +2,7 @@ import time
 import statistics
 import random
 from gemu import HexBoard, AstarPlayer, Monke, Usagi, MinimaxPlayer as Candidate
-from dsa import manhattan, full_distance_heuristic
+from dsa import manhattan, full_distance_heuristic, adversarial_heuristic, average_distance_heuristic
 
 
 class Arena:
@@ -20,11 +20,10 @@ class Arena:
         if random.random() > 0.5:
             candidate = candidate_class(player_id=1, **self.candidate_kwargs)
             opponent = opponent_class(player_id=2)
-            opponent._is_candidate = False
         else:
             candidate = candidate_class(player_id=2, **self.candidate_kwargs)
             opponent = opponent_class(player_id=1)
-            opponent._is_candidate = False
+        opponent._is_candidate = False
 
         move_times = []
         winner = None
@@ -55,13 +54,15 @@ class Arena:
                 break
 
             # Switch players
-            current_player = (
-                opponent if not current_player._is_candidate else candidate
-            )
+            if current_player is candidate:
+                current_player = opponent
+            else:
+                current_player = candidate
             move_count += 1
+            print(current_player)
 
         return {
-            "winner": current_player,
+            "winner": winner,
             "first": candidate.player_id == 1,
             "move_times": move_times,
             "total_moves": move_count + 1,
@@ -141,10 +142,14 @@ class Arena:
 arena = Arena(
     candidate=Candidate,
     #levels=[Monke, Usagi, AstarPlayer, Candidate],
-    levels=[Monke, Usagi, Candidate],
+    #levels=[Monke, Usagi, Candidate],
     #levels=[Monke,],
+    levels=[Candidate,],
     board_size=11,
     games_per_level=10,
+    #heuristic=adversarial_heuristic([full_distance_heuristic,])
+    #heuristic=full_distance_heuristic,
+    heuristic=average_distance_heuristic,
 )
 
 report = arena.run()

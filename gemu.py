@@ -200,18 +200,19 @@ class MinimaxPlayer(Player):
         player_id: int,
         depth=2,
         #depth=3,
+        #heuristic=lambda a, b: 0,
         #heuristic=average_distance_heuristic,
         #heuristic=distance_heuristic,
-        #heuristic=full_distance_heuristic,
-        heuristic=adversarial_heuristic(
-            [full_distance_heuristic,]
-        )
+        heuristic=full_distance_heuristic,
+        #heuristic=adversarial_heuristic(
+        #    [full_distance_heuristic,]
+        #)
     ):
         super().__init__(player_id)
         self.depth = depth
         self.heuristic = heuristic
 
-    def play(self, board):
+    def play(self, board, time=0):
         mboard = MinimaxBoard(board)
         _, move = minimax(
             board,
@@ -222,9 +223,13 @@ class MinimaxPlayer(Player):
             player_id=self.player_id,
             heuristic=self.heuristic,
         )
-        #breakpoint()
+        #if move == (0, 6):
+        #    breakpoint()
         if not move:
             # owarida..
             print("Giving up...")
             return mboard.get_possible_moves()[0]
         return move
+
+    def __str__(self):
+        return f"<Minimax (h={self.heuristic})>"

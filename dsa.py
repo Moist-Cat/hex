@@ -506,12 +506,13 @@ def adversarial_heuristic(advantages: 'List[Callable]'):
 
 def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
     # base
+    mine, his = 0, 0
     if (
         depth == 0
-        or board.check_connection(player_id)
-        or board.check_connection(opponent(player_id))
+        or (mine := board.check_connection(player_id))
+        or (his := board.check_connection(opponent(player_id)))
     ):
-        return heuristic(board, player_id), None
+        return heuristic(board, player_id) + 10*mine + -10*his, None
 
     other = opponent(player_id)
 
@@ -533,6 +534,9 @@ def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
             player_id,
             heuristic,
         )
+
+        #if move == (4, 2) and maximising and len(board.player_positions[player_id]) > 4 and heuristic is distance_heuristic:
+        #    breakpoint()
 
         # we update bounds to find the min-max and prune
         if maximising and val > bound:
