@@ -1,1 +1,1 @@
-from gemu import MinimaxPlayer
+from gemu import AlephNull

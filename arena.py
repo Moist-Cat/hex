@@ -59,7 +59,6 @@ class Arena:
             else:
                 current_player = candidate
             move_count += 1
-            print(current_player)
 
         return {
             "winner": winner,
@@ -142,14 +141,14 @@ class Arena:
 arena = Arena(
     candidate=Candidate,
     #levels=[Monke, Usagi, AstarPlayer, Candidate],
-    #levels=[Monke, Usagi, Candidate],
+    levels=[Monke, Usagi, Candidate],
     #levels=[Monke,],
-    levels=[Candidate,],
+    #levels=[Candidate,],
     board_size=11,
     games_per_level=10,
     #heuristic=adversarial_heuristic([full_distance_heuristic,])
-    #heuristic=full_distance_heuristic,
-    heuristic=average_distance_heuristic,
+    heuristic=full_distance_heuristic,
+    #heuristic=average_distance_heuristic,
 )
 
 report = arena.run()

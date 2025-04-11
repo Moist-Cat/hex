@@ -1,5 +1,5 @@
 import time
-from gemu import HexBoard, MinimaxPlayer as Candidate, Monke as Other
+from gemu import HexBoard, MinimaxPlayer as Candidate, Monke as Other, MonteCarloPlayer, SleepingDragon
 from dsa import adversarial_heuristic, full_distance_heuristic, average_distance_heuristic
 
 class HexGameCLI:
@@ -7,10 +7,12 @@ class HexGameCLI:
         self.board_size = 11
         self.human_player = 1
         self.ai_player = 2
+        #self.ai = SleepingDragon
         self.ai = Candidate
-        #self.ai_2 = Other
-        self.ai_2 = Candidate
-        self.vs_ai = True
+        self.ai_2 = Other
+        #self.ai_2 = MinimaxPlayer#Other
+        #self.ai_2 = Candidate
+        self.vs_ai = True or False
         self.ai_metrics = {
             'move_times': [],
             'avg_move_time': 0,
@@ -69,7 +71,8 @@ class HexGameCLI:
         ai = self.ai(player_id=self.ai_player)
         if self.vs_ai:
             #ai_2 = self.ai_2(player_id=self.human_player, heuristic=adversarial_heuristic([full_distance_heuristic]))
-            ai_2 = self.ai_2(player_id=self.human_player, heuristic=full_distance_heuristic)
+            #ai_2 = self.ai_2(player_id=self.human_player, heuristic=full_distance_heuristic)
+            ai_2 = self.ai_2(player_id=self.human_player)
             #ai_2 = self.ai_2(player_id=self.human_player, heuristic=average_distance_heuristic)
             #ai_2 = self.ai_2(player_id=self.human_player, heuristic=full_distance_heuristic, depth=3)
             #ai_2 = self.ai_2(player_id=self.human_player, heuristic=lambda a,b: 0)
