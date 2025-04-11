@@ -2,11 +2,18 @@ import time
 import statistics
 import random
 from gemu import HexBoard, AstarPlayer, Monke, Usagi, MinimaxPlayer as Candidate
-from dsa import manhattan, full_distance_heuristic, adversarial_heuristic, average_distance_heuristic
+from dsa import (
+    manhattan,
+    full_distance_heuristic,
+    adversarial_heuristic,
+    average_distance_heuristic,
+)
 
 
 class Arena:
-    def __init__(self, candidate, levels, board_size=4, games_per_level=10, **candidate_kwargs):
+    def __init__(
+        self, candidate, levels, board_size=4, games_per_level=10, **candidate_kwargs
+    ):
         self.candidate = candidate
         candidate._is_candidate = True
         self.levels = levels
@@ -32,9 +39,7 @@ class Arena:
 
         while True:
             # time only candidate's moves
-            if (
-                current_player._is_candidate
-            ):
+            if current_player._is_candidate:
                 start_time = time.perf_counter()
                 move = current_player.play(board)
                 elapsed = time.perf_counter() - start_time
@@ -84,7 +89,11 @@ class Arena:
                     wins += 1
 
                 game_metrics.append(
-                    {"moves": result["total_moves"], "time": sum(result["move_times"]), "first": result["first"]}
+                    {
+                        "moves": result["total_moves"],
+                        "time": sum(result["move_times"]),
+                        "first": result["first"],
+                    }
                 )
                 all_move_times.extend(result["move_times"])
 
@@ -140,15 +149,15 @@ class Arena:
 # Usage example
 arena = Arena(
     candidate=Candidate,
-    #levels=[Monke, Usagi, AstarPlayer, Candidate],
+    # levels=[Monke, Usagi, AstarPlayer, Candidate],
     levels=[Monke, Usagi, Candidate],
-    #levels=[Monke,],
-    #levels=[Candidate,],
+    # levels=[Monke,],
+    # levels=[Candidate,],
     board_size=11,
     games_per_level=10,
-    #heuristic=adversarial_heuristic([full_distance_heuristic,])
+    # heuristic=adversarial_heuristic([full_distance_heuristic,])
     heuristic=full_distance_heuristic,
-    #heuristic=average_distance_heuristic,
+    # heuristic=average_distance_heuristic,
 )
 
 report = arena.run()

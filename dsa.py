@@ -6,14 +6,14 @@ import random
 
 
 @cache
-def get_neighbors(row, col): # generates invalid tiles but we don't care
+def get_neighbors(row, col):  # generates invalid tiles but we don't care
     directions = [
-        (0, -1),   # Izquierda
-        (0, 1),    # Derecha
-        (-1, 0),   # Arriba
-        (1, 0),    # Abajo
-        (-1, 1),   # Arriba derecha
-        (1, -1)    # Abajo izquierda
+        (0, -1),  # Izquierda
+        (0, 1),  # Derecha
+        (-1, 0),  # Arriba
+        (1, 0),  # Abajo
+        (-1, 1),  # Arriba derecha
+        (1, -1),  # Abajo izquierda
     ]
     return [(row + dr, col + dc) for dr, dc in directions]
 
@@ -230,14 +230,11 @@ def manhattan(board, player_id):
 
     return -total
 
+
 @cache
 def is_valid(coords, size):
-    return (
-        0 <= coords[0]
-        and coords[0] < size
-        and 0 <= coords[1]
-        and coords[1] < size
-    )
+    return 0 <= coords[0] and coords[0] < size and 0 <= coords[1] and coords[1] < size
+
 
 def exhaust_coords(own_pieces, coords, size, seen):
     r, c = coords
@@ -248,6 +245,7 @@ def exhaust_coords(own_pieces, coords, size, seen):
             seen.add(n)
             total += exhaust_coords(own_pieces, n, size, seen)
     return [coords] + total
+
 
 def _distance_heuristic(board, player_id):
     """
@@ -284,8 +282,7 @@ def _distance_heuristic(board, player_id):
     # the shortest winning path and the cost of this path is the least amount of pieces needed to
     # complete the path.
     #
-    # Now, to compute the average distance between each one of our nodes, we only need to iterate the shortest path
-    # Here is the pseudocode for the full algorithm.
+    # Now, to compute the average distance between each one of our nodes, we only need to iterate the shortest path.
     size = board.size
     opponent_pieces = board.player_positions[opponent(player_id)]
     own_pieces = board.player_positions[player_id]
@@ -322,7 +319,7 @@ def _distance_heuristic(board, player_id):
                 seen.add(left)
                 parent[left] = start_phantom
                 distance[left] = 0 if left in own_pieces else 1
-            elif left in own_pieces: # compress
+            elif left in own_pieces:  # compress
                 all_coords = exhaust_coords(own_pieces, left, size, seen)
                 for crd in all_coords:
                     parent[crd] = start_phantom
@@ -332,7 +329,6 @@ def _distance_heuristic(board, player_id):
             # connect other phantom
             if right not in opponent_pieces:
                 terminal.add(right)
-                #distance[right] = 0 if right in own_pieces else 1
 
     else:  # connect to top edge
         for c in range(size):
@@ -352,7 +348,6 @@ def _distance_heuristic(board, player_id):
 
             if bottom not in opponent_pieces:
                 terminal.add(bottom)
-                #distance[bottom] = 0 if bottom in own_pieces else 1
 
     while queue:
         r, c = queue.popleft()
@@ -364,7 +359,6 @@ def _distance_heuristic(board, player_id):
             distance[end_phantom] = distance[(r, c)]
             parent[end_phantom] = (r, c)
             seen.add(end_phantom)
-            #break
 
         for coords in get_neighbors(r, c):
             if coords in seen:
@@ -375,7 +369,7 @@ def _distance_heuristic(board, player_id):
                 all_coords = exhaust_coords(own_pieces, coords, size, seen)
                 for crd in all_coords:
                     parent[crd] = (r, c)
-                    distance[crd] = distance[(r, c)] # zero cost
+                    distance[crd] = distance[(r, c)]  # zero cost
                     # appendleft because these are at distance[(r, c)], we can
                     # not put them next to the nodes at distance + 1
                     queue.appendleft(crd)
@@ -389,6 +383,7 @@ def _distance_heuristic(board, player_id):
                 seen.add(coords)
 
     return parent, distance, end_phantom
+
 
 def find_average_distance(parent, end_phantom, own_pieces):
     """
@@ -411,7 +406,8 @@ def find_average_distance(parent, end_phantom, own_pieces):
         node = parent[node]
     if not distances:
         return counter
-    return sum(distances)/len(distances)
+    return sum(distances) / len(distances)
+
 
 def near_count(parent, end_phantom, own_pieces):
     """
@@ -430,7 +426,8 @@ def near_count(parent, end_phantom, own_pieces):
     if not distances:
         return -counter
     c = Counter(distances)
-    return 0.5*c[1] + 0.2*c[2]
+    return 0.5 * c[1] + 0.2 * c[2]
+
 
 def full_near_count(parent, end_phantom, own_pieces, opponent_pieces):
     """
@@ -457,42 +454,46 @@ def full_near_count(parent, end_phantom, own_pieces, opponent_pieces):
     if not distances:
         return -counter
     c = Counter(distances)
-    return 0.5*c[1] + 0.2*c[2] + 0.01*near_opponent
-
+    return 0.5 * c[1] + 0.2 * c[2] + 0.01 * near_opponent
 
 
 # distance h function
 def distance_heuristic(board, player_id):
     parent, distance, end_node = _distance_heuristic(board, player_id)
 
-    #return -distance[end_node]
-    return 2*(board.size - distance[end_node]) # placed pieces to make the path shorter
+    # return -distance[end_node]
+    return 2 * (
+        board.size - distance[end_node]
+    )  # placed pieces to make the path shorter
+
 
 def average_distance_heuristic(board, player_id):
     parent, distance, end_node = _distance_heuristic(board, player_id)
     own_pieces = board.player_positions[player_id]
 
-    #return -find_average_distance(parent, end_node, own_pieces)
+    # return -find_average_distance(parent, end_node, own_pieces)
     return near_count(parent, end_node, own_pieces)
+
 
 def full_distance_heuristic(board, player_id):
     parent, distance, end_node = _distance_heuristic(board, player_id)
     own_pieces = board.player_positions[player_id]
     opponent_pieces = board.player_positions[opponent(player_id)]
 
-    #return -distance[end_node]*0.5 + -find_average_distance(parent, end_node, own_pieces)
+    # return -distance[end_node]*0.5 + -find_average_distance(parent, end_node, own_pieces)
     return (
-        2*(board.size - distance[end_node])
-        #+ near_count(parent, end_node, own_pieces)
+        2 * (board.size - distance[end_node])
+        # + near_count(parent, end_node, own_pieces)
         + full_near_count(parent, end_node, own_pieces, opponent_pieces)
     )
 
 
-def adversarial_heuristic(advantages: 'List[Callable]'):
+def adversarial_heuristic(advantages: "List[Callable]"):
     """
     Idea: an advantage for me it's a disadventage for the other player and
      vice-versa.
     """
+
     def _adv(board, player_id):
         total = 0
         for adv in advantages:
@@ -512,7 +513,7 @@ def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
         or (mine := board.check_connection(player_id))
         or (his := board.check_connection(opponent(player_id)))
     ):
-        return heuristic(board, player_id) + 10*mine + -10*his, None
+        return heuristic(board, player_id) + 10 * mine + -10 * his, None
 
     other = opponent(player_id)
 
@@ -534,9 +535,6 @@ def minimax(board, depth, alpha, beta, maximising, player_id, heuristic):
             player_id,
             heuristic,
         )
-
-        #if move == (4, 2) and maximising and len(board.player_positions[player_id]) > 4 and heuristic is distance_heuristic:
-        #    breakpoint()
 
         # we update bounds to find the min-max and prune
         if maximising and val > bound:

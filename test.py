@@ -10,6 +10,7 @@ from dsa import (
     full_distance_heuristic as heuristic,
 )
 
+
 def place(matrix, hex_board):
     for r, column in enumerate(matrix):
         for c, piece in enumerate(column):
@@ -26,11 +27,11 @@ class TestAux(unittest.TestCase):
         self.assertFalse(self.board.check_connection(1))
 
         mat = [
-             [1, 1, 1, 1, 1],
-           [0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0],
-           [0, 0, 0, 0, 0],
-             [0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
         ]
 
         place(mat, self.board)
@@ -38,11 +39,11 @@ class TestAux(unittest.TestCase):
 
     def test_conn_tiny_diagonal(self):
         mat = [
-              [0, 0, 0, 0, 2],
             [0, 0, 0, 0, 2],
-              [0, 0, 0, 0, 2],
             [0, 0, 0, 0, 2],
-              [0, 0, 0, 2, 0],
+            [0, 0, 0, 0, 2],
+            [0, 0, 0, 0, 2],
+            [0, 0, 0, 2, 0],
         ]
 
         place(mat, self.board)
@@ -74,11 +75,11 @@ class TestAux(unittest.TestCase):
 
     def test_conn_genuine_diagonal_again(self):
         mat = [
-              [0, 0, 0, 0, 1],
             [0, 0, 0, 0, 1],
-              [0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 1, 0],
             [0, 1, 1, 1, 0],
-              [1, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0],
         ]
 
         place(mat, self.board)
@@ -86,11 +87,11 @@ class TestAux(unittest.TestCase):
 
     def test_fake_diagonal(self):
         mat = [
-              [1, 0, 0, 0, 2],
+            [1, 0, 0, 0, 2],
             [0, 1, 0, 2, 0],
-              [0, 0, 1, 0, 0],
+            [0, 0, 1, 0, 0],
             [0, 2, 0, 1, 0],
-              [2, 0, 0, 0, 1],
+            [2, 0, 0, 0, 1],
         ]
 
         place(mat, self.board)
@@ -118,25 +119,25 @@ class TestAux(unittest.TestCase):
         self.assertEqual(self.board.board[0][1], 0)
         self.assertEqual(cloned.board[0][1], 1)
 
-class TestMinimax(unittest.TestCase):
 
+class TestMinimax(unittest.TestCase):
     def test_forced_win(self):
         board = HexBoard(3)
         # Setup board for AI (player 2) to win with (2,2)
         board.place_piece(0, 0, 2)
         board.place_piece(1, 1, 2)
-        
+
         def heuristic(b, pid):
             return 100 if b.check_connection(2) else 0
-        
+
         val, move = minimax(
-            board, 
+            board,
             depth=2,
             alpha=float("-inf"),
             beta=float("inf"),
             maximising=True,
             player_id=2,
-            heuristic=heuristic
+            heuristic=heuristic,
         )
         self.assertEqual(move, (2, 0))  # Winning move
         board.place_piece(*move, 2)
@@ -147,10 +148,10 @@ class TestMinimax(unittest.TestCase):
         board = HexBoard(3)
         board.place_piece(1, 0, 1)
         board.place_piece(1, 2, 1)
-        
+
         def heuristic(b, pid):
             return -100 if b.check_connection(1) else 0
-        
+
         val, move = minimax(
             board,
             depth=2,
@@ -158,21 +159,18 @@ class TestMinimax(unittest.TestCase):
             beta=float("inf"),
             maximising=True,
             player_id=2,
-            heuristic=heuristic
+            heuristic=heuristic,
         )
-        self.assertEqual(move, (1, 1)) # blocked!
+        self.assertEqual(move, (1, 1))  # blocked!
 
     def test_heuristic_propagation(self):
         board = HexBoard(2)  # 2x2 board
-        heuristic_values = {
-            (0,0): 5,
-            (0,1): 3,
-            (1,0): -2,
-            (1,1): 7
-        }
-        
+        heuristic_values = {(0, 0): 5, (0, 1): 3, (1, 0): -2, (1, 1): 7}
+
         def mock_heuristic(b, pid):
-            moves = b.player_positions[3 - pid].intersection(set(heuristic_values.keys()))
+            moves = b.player_positions[3 - pid].intersection(
+                set(heuristic_values.keys())
+            )
             return -sum((heuristic_values.get(move, -99) for move in moves))
 
         val, move = minimax(
@@ -182,7 +180,7 @@ class TestMinimax(unittest.TestCase):
             beta=float("inf"),
             maximising=True,
             player_id=2,
-            heuristic=mock_heuristic
+            heuristic=mock_heuristic,
         )
         # 2 maximises then 1 minimizes; -2, since is adventageous to player 2
         # it's disadventageous to player 1 so -2 becomes 2 and so on.
@@ -192,11 +190,11 @@ class TestMinimax(unittest.TestCase):
     def test_alpha_beta_pruning(self):
         board = HexBoard(3)
         visited_nodes = []
-        
+
         def tracing_heuristic(b, pid):
             visited_nodes.append(tuple(sorted(b.player_positions[pid])))
             return len(b.player_positions[pid])
-        
+
         minimax(
             board,
             depth=2,
@@ -204,21 +202,24 @@ class TestMinimax(unittest.TestCase):
             beta=float("inf"),
             maximising=True,
             player_id=2,
-            heuristic=tracing_heuristic
+            heuristic=tracing_heuristic,
         )
-        
+
         # Should prune branches once a value >= 3 is found
-        self.assertEqual(len(visited_nodes), 9) # all possible responses to the first moves
+        self.assertEqual(
+            len(visited_nodes), 9
+        )  # all possible responses to the first moves
 
     def test_depth_limitation(self):
         board = HexBoard(3)
         board.place_piece(0, 0, 2)
-        
+
         depth = 2
+
         def depth_check_heuristic(b, pid):
             assert len(b.player_positions[2]) <= depth + 1
             return 0
-        
+
         minimax(
             board,
             depth=depth,
@@ -226,19 +227,18 @@ class TestMinimax(unittest.TestCase):
             beta=9999,
             maximising=True,
             player_id=2,
-            heuristic=depth_check_heuristic
+            heuristic=depth_check_heuristic,
         )
 
+
 class TestHeuristic(unittest.TestCase):
-
-
     def test_immediate_win(self):
         board = HexBoard(3)
         # Player 1 already has left-right connection
         board.place_piece(0, 0, 1)
         board.place_piece(0, 1, 1)
         board.place_piece(0, 2, 1)
-        
+
         h = distance_heuristic(board, 1)
         assert abs(h) == 0  # No pieces needed to win
 
@@ -248,16 +248,16 @@ class TestHeuristic(unittest.TestCase):
         board.place_piece(0, 1, 2)
         board.place_piece(1, 1, 2)
         board.place_piece(2, 1, 2)
-        
+
         h = distance_heuristic(board, 1)
-        assert abs(h) == float('inf')  # Impossible to win
+        assert abs(h) == float("inf")  # Impossible to win
 
     def test_minimum_path_pieces(self):
         board = HexBoard(3)
         # Player 1 needs 2 more pieces to connect
         board.place_piece(0, 0, 1)
         board.place_piece(2, 2, 1)
-        
+
         h = distance_heuristic(board, 1)
         assert abs(h) == 2  # Needs (1,1) and either (0,1) or (1,0)
 
@@ -272,14 +272,13 @@ class TestHeuristic(unittest.TestCase):
         h = distance_heuristic(board, 2)
         h_2 = average_distance_heuristic(board, 2)
         assert abs(h) == 3
-        assert abs(h_2) == 3, h_2 # two islands
-
+        assert abs(h_2) == 3, h_2  # two islands
 
     def test_phantom_edge_connection(self):
         board = HexBoard(3)
         # Player 1 has piece touching left edge
         board.place_piece(1, 0, 1)
-        
+
         h = distance_heuristic(board, 1)
         assert abs(h) == 2, h  # Needs to connect to right edge
 
@@ -295,4 +294,4 @@ class TestHeuristic(unittest.TestCase):
 
         h = distance_heuristic(board, 1)
 
-        assert abs(h) == 2 # must go around
+        assert abs(h) == 2  # must go around

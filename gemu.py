@@ -202,14 +202,14 @@ class MinimaxPlayer(Player):
         self,
         player_id: int,
         depth=2,
-        #depth=3,
-        #heuristic=lambda a, b: 0,
-        #heuristic=average_distance_heuristic,
-        #heuristic=distance_heuristic,
+        # depth=3,
+        # heuristic=lambda a, b: 0,
+        # heuristic=average_distance_heuristic,
+        # heuristic=distance_heuristic,
         heuristic=full_distance_heuristic,
-        #heuristic=adversarial_heuristic(
+        # heuristic=adversarial_heuristic(
         #    [full_distance_heuristic,]
-        #)
+        # )
     ):
         super().__init__(player_id)
         self.depth = depth
@@ -235,7 +235,9 @@ class MinimaxPlayer(Player):
     def __str__(self):
         return f"<Minimax (h={self.heuristic})>"
 
+
 AlephNull = MinimaxPlayer
+
 
 class MonteCarloPlayer(Player):
     """
@@ -249,8 +251,15 @@ class MonteCarloPlayer(Player):
     ... or, in our case, a monkey making random moves using all the compute power available will
         eventually win (spoiler: it doesn't).
     """
-    def __init__(self, player_id, max_simulations=1000, min_simulations=100,
-                 win_check_interval=1, num_workers=1*8):
+
+    def __init__(
+        self,
+        player_id,
+        max_simulations=1000,
+        min_simulations=100,
+        win_check_interval=1,
+        num_workers=1 * 8,
+    ):
         super().__init__(player_id)
         self.max_simulations = max_simulations
         self.min_simulations = min_simulations
@@ -261,7 +270,7 @@ class MonteCarloPlayer(Player):
         """Dynamically adjust simulations based on game progress"""
         num_played = sum(cell != 0 for row in board.board for cell in row)
         total_cells = board.size * board.size
-        
+
         if num_played <= 5:
             return self.min_simulations
         elif num_played >= 10:
@@ -269,7 +278,10 @@ class MonteCarloPlayer(Player):
         # Linear interpolation between min and max
         # recall the values are between 5 and 10
         progress = (num_played - 5) / 5
-        return int(self.min_simulations + (self.max_simulations - self.min_simulations) * progress)
+        return int(
+            self.min_simulations
+            + (self.max_simulations - self.min_simulations) * progress
+        )
 
     def simulate_playout(self, board, move):
         """Play at random and hope for the best"""
@@ -277,41 +289,45 @@ class MonteCarloPlayer(Player):
         sim_board.place_piece(*move, self.player_id)
         current_player = opponent(self.player_id)
         move_count = 1
-        
+
         while True:
             valid_moves = sim_board.get_possible_moves()
             if not valid_moves:
                 break
 
-            #if len(sim_board.player_positions) < sim_board.size:
+            # if len(sim_board.player_positions) < sim_board.size:
             #    top_moves = sorted(
-            #        valid_moves, 
+            #        valid_moves,
             #          key=lambda m: self.get_move_priority(board, m),
             #          reverse=True
             #    )[:10]
-            #else:
+            # else:
             top_moves = valid_moves
-                
+
             chosen_move = random.choice(valid_moves)
-                
+
             sim_board.place_piece(*chosen_move, current_player)
             move_count += 1
-            
+
             # Periodic win check
             if move_count % self.win_check_interval == 0:
                 if sim_board.check_connection(current_player):
                     return 1 if current_player == self.player_id else 0
-            
+
             current_player = opponent(current_player)
-        
+
         # In case we break (it won't happen)
         return 1 if sim_board.check_connection(self.player_id) else 0
 
     def evaluate_move(self, board, move, num_simulations):
         """Evaluate a move through parallel simulations"""
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_workers) as executor:
-            futures = [executor.submit(self.simulate_playout, board, move) 
-                      for _ in range(num_simulations)]
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.num_workers
+        ) as executor:
+            futures = [
+                executor.submit(self.simulate_playout, board, move)
+                for _ in range(num_simulations)
+            ]
             results = [f.result() for f in concurrent.futures.as_completed(futures)]
             return sum(results) / num_simulations  # win rate; if we didn't win we lost
 
@@ -320,12 +336,12 @@ class MonteCarloPlayer(Player):
         # Prefer center in early game, edges in mid-game
         size = board.size
         r, c = move
-        center_dist = math.sqrt((r - size/2)**2 + (c - size/2)**2)
-        
+        center_dist = math.sqrt((r - size / 2) ** 2 + (c - size / 2) ** 2)
+
         if len(board.player_positions) < 5:
             return 1 / (1 + center_dist)  # Prefer center
         else:
-            edge_dist = min(r, size-1-r, c, size-1-c)
+            edge_dist = min(r, size - 1 - r, c, size - 1 - c)
             return edge_dist / size  # Prefer edges
 
     # overriden
@@ -336,44 +352,41 @@ class MonteCarloPlayer(Player):
 
         return full_distance_heuristic(new_board, self.player_id)
 
-
     def play(self, board):
         valid_moves = board.get_possible_moves()
         if not valid_moves:
             return None
-            
+
         # Special case: first move (prefer center)
         if all(cell == 0 for row in board.board for cell in row):
-            return (board.size//2, board.size//2)
-            
+            return (board.size // 2, board.size // 2)
+
         simulations_per_move = self.get_simulations_per_move(board)
         move_stats = {}
 
         # First pass: quick evaluation of all moves using our heuristic
-        #top_moves = sorted(
-        #    valid_moves, 
+        # top_moves = sorted(
+        #    valid_moves,
         #      key=lambda m: self.get_move_priority(board, m),
         #      reverse=True
-        #)[:10]
+        # )[:10]
         top_moves = valid_moves
-        
-        #breakpoint()
-        
+
         # Second pass: focus on promising moves
         for move in top_moves:
             move_stats[move] = {
-                'win_rate': self.evaluate_move(board, move, simulations_per_move),
-                'simulations': simulations_per_move,
+                "win_rate": self.evaluate_move(board, move, simulations_per_move),
+                "simulations": simulations_per_move,
             }
-        
+
         for move in move_stats:
-            if move_stats[move]['simulations'] > 0:
-                move_stats[move]['score'] = move_stats[move]['win_rate']
+            if move_stats[move]["simulations"] > 0:
+                move_stats[move]["score"] = move_stats[move]["win_rate"]
             else:
-                move_stats[move]['score'] = 0
-                
+                move_stats[move]["score"] = 0
+
         # Select best move
-        best_move = max(move_stats, key=lambda m: move_stats[m]['score'])
+        best_move = max(move_stats, key=lambda m: move_stats[m]["score"])
         return best_move
 
 
@@ -397,7 +410,6 @@ class SleepingDragon(Player):
             player_id=player_id,
             depth=2,
             heuristic=full_distance_heuristic,
-
         )
 
     def play(self, board, time=0):
@@ -405,10 +417,10 @@ class SleepingDragon(Player):
 
         size = board.size
 
-        if moves*4 <= size:
+        if moves * 4 <= size:
             return self.elephant.play(board)
         else:
             # possibility to play m-c approaches 1 as the game advances
-            #player = self.elephant if random.random() > min(1, (moves)/(size+1)) else self.monkey
+            # player = self.elephant if random.random() > min(1, (moves)/(size+1)) else self.monkey
             player = self.monkey
             return player.play(board)
